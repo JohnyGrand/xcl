@@ -52,6 +52,28 @@ exit /b 0
     if ($smokeBlock -notmatch 'xcl-smoke v1') { throw "smoke block missing header: $smokeBlock" }
     if ($smokeBlock -notmatch 'gpu: Mock Synthetic Adapter') { throw "smoke block missing mock gpu: $smokeBlock" }
 
+    # A report in use can fail to copy after the new log has already replaced the old one.
+    $archivedReport = Join-Path $outDir1 'report.json'
+    $lock = [IO.File]::Open($archivedReport, 'Open', 'Read', 'None')
+    try {
+        Add-Content -LiteralPath $mockLog -Value 'next run'
+        $copyFailed = $false
+        try {
+            $null = & $runner -Game $gameDir -Xcl $mockXcl -Seconds 5 -OutDir $outDir1 -Title 'InterruptedCopy'
+        } catch [IO.IOException] {
+            $copyFailed = $true
+        }
+        if (-not $copyFailed) { throw 'copying the locked report should fail' }
+        if ((Get-Content -LiteralPath (Join-Path $outDir1 'xcl.log') -Tail 1) -ne 'next run') {
+            throw 'expected the new log to have been copied before the failure'
+        }
+        if (Test-Path -LiteralPath (Join-Path $outDir1 'manifest.json')) {
+            throw 'a partial archive still contains the previous run manifest'
+        }
+    } finally {
+        $lock.Dispose()
+    }
+
     # Run 2: remove report.json to test missing report case; reuse $outDir1 to verify stale report.json is purged
     Remove-Item -LiteralPath $mockReport -Force
     $output2 = & $runner -Game $gameDir -Xcl $mockXcl -Seconds 10 -OutDir $outDir1 -Title 'MockRun2'

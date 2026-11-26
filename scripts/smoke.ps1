@@ -96,6 +96,11 @@ if ($OutDir) {
     if (-not (Test-Path $OutDir)) {
         $null = New-Item -ItemType Directory -Path $OutDir -Force
     }
+    # Once copying starts, the previous manifest can no longer describe this directory.
+    $manifestPath = Join-Path $OutDir 'manifest.json'
+    if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+        Remove-Item -LiteralPath $manifestPath -Force
+    }
     Copy-Item -LiteralPath $log -Destination (Join-Path $OutDir 'xcl.log') -Force
     $destReport = Join-Path $OutDir 'report.json'
     if (Test-Path $report) {
@@ -119,7 +124,7 @@ if ($OutDir) {
         input_schedule = $env:XCL_PRESS_AT
         data_root      = $env:XCL_DATA_ROOT
     }
-    $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $OutDir 'manifest.json') -Encoding utf8
+    $manifest | ConvertTo-Json | Set-Content -LiteralPath $manifestPath -Encoding utf8
 }
 
 @"
