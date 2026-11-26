@@ -61,9 +61,9 @@ $env:XCL_ACTIVITY = '1'
 $null = $p.Start()
 $stdoutTask = $p.StandardOutput.ReadToEndAsync()
 $stderrTask = $p.StandardError.ReadToEndAsync()
-if (-not $p.WaitForExit(($Seconds + $StartupTimeoutSeconds) * 1000)) {
+$timedOut = -not $p.WaitForExit(($Seconds + $StartupTimeoutSeconds) * 1000)
+if ($timedOut) {
     if (-not $p.HasExited) { $p.Kill() }
-    $timedOut = $true
 }
 $p.WaitForExit()
 $stdout = $stdoutTask.Result

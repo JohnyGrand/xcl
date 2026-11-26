@@ -35,6 +35,8 @@ exit /b 0
 "@ | Set-Content -LiteralPath $mockXcl -Encoding Ascii
 
     # Run 1: with report.json present
+    # A caller's timeout flag must not change the result of this successful run.
+    $timedOut = $true
     $output1 = & $runner -Game $gameDir -Xcl $mockXcl -Seconds 5 -OutDir $outDir1 -Title 'MockRun1'
     if ($LASTEXITCODE -ne 0) { throw "smoke.ps1 exited with code $LASTEXITCODE on run 1" }
 
@@ -43,6 +45,7 @@ exit /b 0
     if (-not (Test-Path (Join-Path $outDir1 'manifest.json'))) { throw 'run 1 did not write manifest.json' }
 
     $manifest1 = Get-Content (Join-Path $outDir1 'manifest.json') -Raw -Encoding utf8 | ConvertFrom-Json
+    if ($manifest1.exit -ne '0x0') { throw "unexpected exit: $($manifest1.exit)" }
     if ($manifest1.gpu -ne 'Mock Synthetic Adapter') { throw "unexpected gpu: $($manifest1.gpu)" }
     if ($manifest1.seconds -ne 5) { throw "unexpected seconds: $($manifest1.seconds)" }
     if ($manifest1.frames -ne '90 (PresentX 90)') { throw "unexpected frames: $($manifest1.frames)" }
