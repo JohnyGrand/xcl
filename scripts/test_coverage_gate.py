@@ -1,8 +1,11 @@
 import json
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from coverage_gate import compare, sweep_json
+from coverage_gate import compare, main, sweep_json
 
 STAGES = {
     "CS": {"total": 100, "translated": 95, "unsupported": 5, "validator_failed": 0, "panicked": 0, "timeout": 0},
@@ -59,6 +62,17 @@ class CompareTests(unittest.TestCase):
 
 
 class SweepJsonTests(unittest.TestCase):
+    def test_failed_sweep_cannot_replace_baseline(self):
+        failed = subprocess.CompletedProcess([], 1, json.dumps(run()), "sweep failed")
+        with tempfile.TemporaryDirectory() as tmp:
+            baseline = Path(tmp) / "baseline.json"
+            original = json.dumps(run(PS={"translated": 199})).encode()
+            baseline.write_bytes(original)
+            with patch("coverage_gate.subprocess.run", return_value=failed):
+                status = main(["--xcl", "xcl.exe", "--rpf", "pack", "--baseline", str(baseline), "--update"])
+            self.assertEqual(status, 2)
+            self.assertEqual(baseline.read_bytes(), original)
+
     def test_takes_the_last_json_line(self):
         out = "some progress\n" + json.dumps({"stages": STAGES, "all": {}}) + "\n"
         self.assertEqual(sweep_json(out)["stages"], STAGES)
