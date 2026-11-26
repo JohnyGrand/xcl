@@ -8,7 +8,9 @@ import io, os, re, sys
 
 src = io.open(sys.argv[1], encoding='utf-8').read()
 origin = re.search(r'Source\s*:\s*(\S+)', src)
-rows = re.findall(r'\w+\((\w+), "([0-9A-Fa-f-]{36})", "([0-9A-Fa-f-]{36})", (\d+)\)', src)
+rows = re.findall(
+    r'\w+\([ \t]*(\w+)[ \t]*,[ \t]*"([0-9A-Fa-f-]{36})"[ \t]*,'
+    r'[ \t]*"([0-9A-Fa-f-]{36})"[ \t]*,[ \t]*(\d+)[ \t]*\)', src)
 assert rows, 'no rows'
 hexg = lambda g: '0x' + g.replace('-', '').lower()
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'crates', 'xcl', 'src', 'hle', 'xgameruntime', 'gdk_table.rs')
