@@ -31,10 +31,10 @@ class ExportAliasTests(unittest.TestCase):
                 image[section:section + 8] = b".edata\0\0"
                 struct.pack_into("<IIII", image, section + 8, 0x200, 0x1000, 0x200, 0x200)
                 struct.pack_into("<I", image, section + 36, 0x40000040)
-                struct.pack_into("<7I", image, 0x20C, 0x1080, 7, 3, 3, 0x1040, 0x1050, 0x1060)
-                struct.pack_into("<3I", image, 0x240, 0x1100, 0x1110, 0x10C0)
+                struct.pack_into("<7I", image, 0x20C, 0x1080, 7, 4, 3, 0x1040, 0x1050, 0x1060)
+                struct.pack_into("<4I", image, 0x240, 0x1100, 0x1110, 0, 0x10C0)
                 struct.pack_into("<3I", image, 0x250, 0x1090, 0x1098, 0x10A0)
-                struct.pack_into("<3H", image, 0x260, 0, 0, 2)
+                struct.pack_into("<3H", image, 0x260, 0, 0, 3)
                 for offset, text in ((0x280, b"synthetic.dll\0"), (0x290, b"Alpha\0"),
                                      (0x298, b"Beta\0"), (0x2A0, b"Forwarded\0"),
                                      (0x2C0, b"other.Target\0")):
@@ -47,7 +47,9 @@ class ExportAliasTests(unittest.TestCase):
                 )
                 self.assertRegex(result.stdout, r"(?m)^  #7\s+Alpha, Beta @0x1100$")
                 self.assertRegex(result.stdout, r"(?m)^  #8\s+\(ordinal only\) @0x1110$")
-                self.assertRegex(result.stdout, r"(?m)^  #9\s+Forwarded @0x10c0 -> other.Target$")
+                self.assertNotRegex(result.stdout, r"(?m)^  #9\s")
+                self.assertRegex(result.stdout, r"(?m)^  #10\s+Forwarded @0x10c0 -> other.Target$")
+                self.assertIn("synthetic.dll: 3 exports, 3 names, ordinal base 7", result.stdout)
 
 
 if __name__ == "__main__":

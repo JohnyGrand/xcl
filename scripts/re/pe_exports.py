@@ -36,9 +36,10 @@ for path in sys.argv[1:]:
         nr = struct.unpack_from('<I', b, off(anames) + 4 * i)[0]
         o = struct.unpack_from('<H', b, off(aords) + 2 * i)[0]
         names.setdefault(o, []).append(cstr(nr))
-    print(f'  {cstr(name_rva)}: {nfun} functions, {nnames} names, ordinal base {base}')
-    for i in range(nfun):
-        rva = struct.unpack_from('<I', b, off(afun) + 4 * i)[0]
+    addresses = struct.unpack_from(f'<{nfun}I', b, off(afun)) if nfun else ()
+    nexports = nfun - addresses.count(0)
+    print(f'  {cstr(name_rva)}: {nexports} exports, {nnames} names, ordinal base {base}')
+    for i, rva in enumerate(addresses):
         if not rva:
             continue
         fwd = f' -> {cstr(rva)}' if exp_rva <= rva < exp_rva + exp_size else ''
